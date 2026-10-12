@@ -156,7 +156,9 @@ class Rack::Attack
 
     # Rails decodes route params and accepts UUIDs with different casing,
     # braces or omitted hyphens. All spellings must share the same budget.
-    Rack::Utils.unescape_path(match[1]).delete("{}-").downcase if match
+    item_id = Rack::Utils.unescape_path(match[1]) if match
+    # Leave invalid UTF-8 route parameters to Rails' bad-request handling.
+    item_id.delete("{}-").downcase if item_id&.valid_encoding?
   end
 
   throttle("trade_republic_auth/ip", limit: 10, period: 1.minute) do |request|

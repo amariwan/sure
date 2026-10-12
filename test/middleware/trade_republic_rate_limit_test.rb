@@ -77,6 +77,22 @@ class TradeRepublicRateLimitTest < ActiveSupport::TestCase
     assert_equal 204, request("/trade_republic_items/item-1/complete_login").first
   end
 
+  test "malformed utf8 item ids do not crash before Rails can reject them" do
+    [ "%FF", "%C0%AF", "%E2%82" ].each do |item_id|
+      [
+        [ "PATCH", "/trade_republic_items/#{item_id}" ],
+        [ "PUT", "/trade_republic_items/#{item_id}" ],
+        [ "POST", "/trade_republic_items/#{item_id}/initiate_login" ],
+        [ "POST", "/trade_republic_items/#{item_id}/complete_login" ],
+        [ "POST", "/trade_republic_items/#{item_id}/initiate_qr_login" ]
+      ].each do |method, path|
+        assert_nothing_raised do
+          assert_equal 204, request(path, method: method).first
+        end
+      end
+    end
+  end
+
   test "polling and non authentication requests do not consume the login budget" do
     [
       [ "GET", "/trade_republic_items/item-1" ],
